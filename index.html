@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pointage – Centre de loisirs</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --border: #e2e6ea;
+    --text: #1a1d23;
+    --muted: #6b7280;
+    --accent: #3b7dd8;
+    --accent-light: #e8f0fb;
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --orange: #ea580c;
+    --orange-light: #ffedd5;
+    --red: #dc2626;
+    --radius: 10px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--accent);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -.3px; }
+  header .date { font-size: .85rem; opacity: .85; }
+
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 4px;
+    padding: 10px 24px;
+  }
+  nav button {
+    background: none;
+    border: none;
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: .9rem;
+    color: var(--muted);
+    font-weight: 500;
+    transition: all .15s;
+  }
+  nav button.active {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  main { padding: 20px 24px; max-width: 800px; margin: 0 auto; }
+
+  /* ── POINTAGE ── */
+  .search-bar {
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .search-bar input {
+    width: 100%;
+    padding: 10px 14px 10px 38px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: .95rem;
+    background: var(--surface);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .search-bar input:focus { border-color: var(--accent); }
+  .search-bar svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    width: 16px;
+    height: 16px;
+  }
+
+  .stats-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: .82rem;
+    color: var(--muted);
+  }
+  .stat strong { color: var(--text); font-size: 1rem; }
+
+  .children-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .child-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    transition: border-color .15s;
+  }
+  .child-card:hover { border-color: var(--accent); }
+
+  .child-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: .97rem;
+  }
+  .child-name span {
+    font-weight: 400;
+    color: var(--muted);
+    font-size: .88rem;
+    display: block;
+  }
+
+  .punch-group {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .punch-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all .15s;
+    min-width: 72px;
+  }
+  .punch-btn .label {
+    font-size: .7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--muted);
+  }
+  .punch-btn .time-val {
+    font-size: .88rem;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  .punch-btn.arrived {
+    background: var(--green-light);
+    border-color: var(--green);
+  }
+  .punch-btn.arrived .label { color: var(--green); }
+  .punch-btn.arrived .time-val { color: var(--green); }
+
+  .punch-btn.departed {
+    background: var(--orange-light);
+    border-color: var(--orange);
+  }
+  .punch-btn.departed .label { color: var(--orange); }
+  .punch-btn.departed .time-val { color: var(--orange); }
+
+  .punch-btn:hover:not(.arrived):not(.departed) {
+    background: var(--accent-light);
+    border-color: var(--accent);
+  }
+
+  .undo-btn {
+    background: none;
+    border: none;
+    font-size: .7rem;
+    color: var(--muted);
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+  }
+  .undo-btn:hover { color: var(--red); }
+
+  /* ── ADMIN ── */
+  .admin-section { display: flex; flex-direction: column; gap: 20px; }
+
+  .add-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+  }
+  .add-form h2 { font-size: 1rem; margin-bottom: 14px; }
+
+  .field-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .field-row input {
+    flex: 1;
+    min-width: 140px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: .92rem;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .field-row input:focus { border-color: var(--accent); }
+
+  .btn-primary {
+    padding: 9px 20px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 7px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+    white-space: nowrap;
+  }
+  .btn-primary:hover { opacity: .88; }
+
+  .btn-danger {
+    padding: 5px 10px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--red);
+    font-size: .8rem;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-danger:hover { background: #fee2e2; border-color: var(--red); }
+
+  .admin-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .admin-list h2 { font-size: 1rem; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .admin-row {
+    display: flex;
+    align-items: center;
+    padding: 11px 18px;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+  .admin-row:last-child { border-bottom: none; }
+  .admin-row .name { flex: 1; font-size: .92rem; }
+  .admin-row .name em { color: var(--muted); font-style: normal; font-size: .82rem; }
+
+  /* ── HISTORIQUE ── */
+  .history-section {}
+  .day-picker {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .day-picker input[type=date] {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: .9rem;
+    outline: none;
+  }
+  .day-picker input:focus { border-color: var(--accent); }
+  .day-picker label { font-size: .9rem; color: var(--muted); }
+
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    font-size: .9rem;
+  }
+  .history-table th {
+    background: var(--bg);
+    text-align: left;
+    padding: 10px 14px;
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .history-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-table tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: .78rem;
+    font-weight: 600;
+  }
+  .badge.ok { background: var(--green-light); color: var(--green); }
+  .badge.missing { background: #f3f4f6; color: var(--muted); }
+
+  .empty { text-align: center; color: var(--muted); padding: 32px; font-size: .9rem; }
+
+  .export-bar { margin-bottom: 12px; display: flex; justify-content: flex-end; }
+  .btn-secondary {
+    padding: 7px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: .85rem;
+    cursor: pointer;
+    color: var(--text);
+    font-weight: 500;
+    transition: border-color .15s;
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📋 Pointage – Centre de loisirs</h1>
+  <span class="date" id="headerDate"></span>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('pointage')">Pointage du jour</button>
+  <button onclick="showTab('historique')">Historique</button>
+  <button onclick="showTab('admin')">Gestion des enfants</button>
+</nav>
+
+<main>
+
+  <!-- ── POINTAGE ── -->
+  <div id="tab-pointage">
+    <div class="stats-bar" id="statsBar"></div>
+    <div class="search-bar">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3a6 6 0 100 12A6 6 0 009 3zM1 9a8 8 0 1114.32 4.906l3.387 3.387a1 1 0 01-1.414 1.414l-3.387-3.387A8 8 0 011 9z" clip-rule="evenodd"/></svg>
+      <input type="text" id="searchInput" placeholder="Rechercher un enfant…" oninput="renderPointage()">
+    </div>
+    <div class="children-list" id="childrenList"></div>
+  </div>
+
+  <!-- ── HISTORIQUE ── -->
+  <div id="tab-historique" style="display:none">
+    <div class="day-picker">
+      <label for="histDate">Voir le :</label>
+      <input type="date" id="histDate" onchange="renderHistory()">
+    </div>
+    <div class="export-bar">
+      <button class="btn-secondary" onclick="exportCSV()">⬇ Exporter CSV</button>
+    </div>
+    <div id="historyContent"></div>
+  </div>
+
+  <!-- ── ADMIN ── -->
+  <div id="tab-admin" style="display:none">
+    <div class="admin-section">
+      <div class="add-form">
+        <h2>Ajouter un enfant</h2>
+        <div class="field-row">
+          <input type="text" id="inputPrenom" placeholder="Prénom" />
+          <input type="text" id="inputNom" placeholder="Nom" />
+          <button class="btn-primary" onclick="addChild()">Ajouter</button>
+        </div>
+      </div>
+      <div class="admin-list">
+        <h2>Liste des enfants</h2>
+        <div id="adminList"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Données ──────────────────────────────────────────────────────────────────
+
+function getData() {
+  try { return JSON.parse(localStorage.getItem('cloisirs_data') || '{}'); } catch { return {}; }
+}
+function saveData(d) { localStorage.setItem('cloisirs_data', JSON.stringify(d)); }
+
+function getChildren() {
+  try { return JSON.parse(localStorage.getItem('cloisirs_children') || '[]'); } catch { return []; }
+}
+function saveChildren(c) { localStorage.setItem('cloisirs_children', JSON.stringify(c)); }
+
+function todayKey() {
+  const d = new Date();
+  return d.toISOString().slice(0, 10);
+}
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+
+function showTab(tab) {
+  ['pointage','historique','admin'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? '' : 'none';
+  });
+  document.querySelectorAll('nav button').forEach((b, i) => {
+    b.classList.toggle('active', ['pointage','historique','admin'][i] === tab);
+  });
+  if (tab === 'pointage') renderPointage();
+  if (tab === 'historique') { initHistDate(); renderHistory(); }
+  if (tab === 'admin') renderAdmin();
+}
+
+// ── Pointage ─────────────────────────────────────────────────────────────────
+
+function renderPointage() {
+  const children = getChildren();
+  const data = getData();
+  const today = todayKey();
+  const q = document.getElementById('searchInput').value.toLowerCase();
+
+  const filtered = children.filter(c => {
+    const full = (c.prenom + ' ' + c.nom).toLowerCase();
+    return full.includes(q);
+  });
+
+  // Stats
+  const dayData = data[today] || {};
+  let nbArrive = 0, nbParti = 0;
+  children.forEach(c => {
+    const e = dayData[c.id] || {};
+    if (e.arrivee) nbArrive++;
+    if (e.depart) nbParti++;
+  });
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat"><strong>${children.length}</strong> enfants</div>
+    <div class="stat"><strong>${nbArrive}</strong> arrivée${nbArrive>1?'s':''} pointée${nbArrive>1?'s':''}</div>
+    <div class="stat"><strong>${nbParti}</strong> départ${nbParti>1?'s':''} pointé${nbParti>1?'s':''}</div>
+  `;
+
+  const list = document.getElementById('childrenList');
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">Aucun enfant trouvé.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(c => {
+    const e = (dayData[c.id]) || {};
+    const arrHtml = e.arrivee
+      ? `<div class="punch-btn arrived">
+           <span class="label">Arrivée</span>
+           <span class="time-val">${e.arrivee}</span>
+           <button class="undo-btn" onclick="undo('${c.id}','arrivee')">annuler</button>
+         </div>`
+      : `<button class="punch-btn" onclick="punch('${c.id}','arrivee')">
+           <span class="label">Arrivée</span>
+           <span class="time-val">—</span>
+         </button>`;
+    const depHtml = e.depart
+      ? `<div class="punch-btn departed">
+           <span class="label">Départ</span>
+           <span class="time-val">${e.depart}</span>
+           <button class="undo-btn" onclick="undo('${c.id}','depart')">annuler</button>
+         </div>`
+      : `<button class="punch-btn" onclick="punch('${c.id}','depart')">
+           <span class="label">Départ</span>
+           <span class="time-val">—</span>
+         </button>`;
+    return `<div class="child-card">
+      <div class="child-name">${c.prenom} <span>${c.nom.toUpperCase()}</span></div>
+      <div class="punch-group">${arrHtml}${depHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function punch(id, type) {
+  const now = new Date();
+  const hhmm = now.toTimeString().slice(0, 5);
+  const data = getData();
+  const today = todayKey();
+  if (!data[today]) data[today] = {};
+  if (!data[today][id]) data[today][id] = {};
+  data[today][id][type] = hhmm;
+  saveData(data);
+  renderPointage();
+}
+
+function undo(id, type) {
+  if (!confirm('Supprimer ce pointage ?')) return;
+  const data = getData();
+  const today = todayKey();
+  if (data[today] && data[today][id]) {
+    delete data[today][id][type];
+    saveData(data);
+    renderPointage();
+  }
+}
+
+// ── Historique ───────────────────────────────────────────────────────────────
+
+function initHistDate() {
+  document.getElementById('histDate').value = todayKey();
+}
+
+function renderHistory() {
+  const date = document.getElementById('histDate').value;
+  if (!date) return;
+  const data = getData();
+  const children = getChildren();
+  const dayData = data[date] || {};
+
+  const fmtDate = new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  if (children.length === 0) {
+    document.getElementById('historyContent').innerHTML = '<div class="empty">Aucun enfant enregistré.</div>';
+    return;
+  }
+
+  const rows = children.map(c => {
+    const e = dayData[c.id] || {};
+    const arr = e.arrivee ? `<span class="badge ok">${e.arrivee}</span>` : `<span class="badge missing">—</span>`;
+    const dep = e.depart ? `<span class="badge ok">${e.depart}</span>` : `<span class="badge missing">—</span>`;
+    return `<tr>
+      <td>${c.prenom} <strong>${c.nom.toUpperCase()}</strong></td>
+      <td>${arr}</td>
+      <td>${dep}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('historyContent').innerHTML = `
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:12px;text-transform:capitalize">${fmtDate}</p>
+    <table class="history-table">
+      <thead><tr><th>Enfant</th><th>Arrivée</th><th>Départ</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function exportCSV() {
+  const date = document.getElementById('histDate').value;
+  const data = getData();
+  const children = getChildren();
+  const dayData = data[date] || {};
+
+  let csv = 'Prénom,Nom,Arrivée,Départ\n';
+  children.forEach(c => {
+    const e = dayData[c.id] || {};
+    csv += `${c.prenom},${c.nom},${e.arrivee||''},${e.depart||''}\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `pointage_${date}.csv`;
+  a.click();
+}
+
+// ── Admin ────────────────────────────────────────────────────────────────────
+
+function addChild() {
+  const prenom = document.getElementById('inputPrenom').value.trim();
+  const nom = document.getElementById('inputNom').value.trim();
+  if (!prenom || !nom) { alert('Remplis prénom et nom.'); return; }
+  const children = getChildren();
+  children.push({ id: Date.now().toString(), prenom, nom });
+  children.sort((a, b) => a.nom.localeCompare(b.nom) || a.prenom.localeCompare(b.prenom));
+  saveChildren(children);
+  document.getElementById('inputPrenom').value = '';
+  document.getElementById('inputNom').value = '';
+  renderAdmin();
+}
+
+function removeChild(id) {
+  if (!confirm('Supprimer cet enfant ? Ses pointages existants sont conservés.')) return;
+  const children = getChildren().filter(c => c.id !== id);
+  saveChildren(children);
+  renderAdmin();
+}
+
+function renderAdmin() {
+  const children = getChildren();
+  const list = document.getElementById('adminList');
+  if (children.length === 0) {
+    list.innerHTML = '<div class="empty">Aucun enfant pour l\'instant.</div>';
+    return;
+  }
+  list.innerHTML = children.map(c => `
+    <div class="admin-row">
+      <span class="name">${c.prenom} <em>${c.nom.toUpperCase()}</em></span>
+      <button class="btn-danger" onclick="removeChild('${c.id}')">Supprimer</button>
+    </div>`).join('');
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+const now = new Date();
+document.getElementById('headerDate').textContent = now.toLocaleDateString('fr-FR', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+});
+
+renderPointage();
+</script>
+</body>
+</html>
